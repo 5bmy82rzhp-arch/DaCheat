@@ -34,7 +34,7 @@ screenGui.Name = "DaCheat"
 screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.DisplayOrder = 2147483647 -- Максимальный приоритет (выше CoreGui)
+screenGui.DisplayOrder = 2147483647
 screenGui.Parent = playerGui
 
 -- ============ COLORS ============
@@ -270,6 +270,10 @@ mainFrame.Visible = false
 mainFrame.ZIndex = 1
 mainFrame.Parent = screenGui
 
+-- Adaptive Scale for Main Frame
+local mainUIScale = Instance.new("UIScale")
+mainUIScale.Parent = mainFrame
+
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 10)
 corner.Parent = mainFrame
@@ -485,6 +489,10 @@ icon.ZIndex = 5
 icon.AnchorPoint = Vector2.new(0, 0)
 icon.Parent = screenGui
 
+-- Adaptive Scale for Icon
+local iconUIScale = Instance.new("UIScale")
+iconUIScale.Parent = icon
+
 local iconCorner = Instance.new("UICorner")
 iconCorner.CornerRadius = UDim.new(0, 26)
 iconCorner.Parent = icon
@@ -500,6 +508,34 @@ local function startFloating()
     floatTween:Play()
 end
 startFloating()
+
+-- ============ ADAPTIVE SCALING LOGIC ============
+local function updateScale()
+    local viewport = workspace.CurrentCamera.ViewportSize
+    
+    -- Panel Scaling
+    -- Base size is 320x520. We want to fit it in 90% of screen width/height.
+    local scaleX = (viewport.X * 0.9) / 320
+    local scaleY = (viewport.Y * 0.9) / 520
+    local panelScale = math.min(scaleX, scaleY, 1)
+    
+    -- Minimum 0.7 (70%) to keep text readable
+    if panelScale < 0.7 then panelScale = 0.7 end
+    mainUIScale.Scale = panelScale
+    
+    -- Icon Scaling
+    -- We want the icon to stay around 48-52 pixels in real screen size.
+    -- Since icon base is 52px, Scale should be 1 if screen is normal.
+    -- If screen is tiny (e.g., 300px wide), we don't want a 52px icon taking 1/6 of screen.
+    -- So we scale it based on screen width.
+    local iconScale = (viewport.X * 0.12) / 52
+    if iconScale > 1 then iconScale = 1 end
+    if iconScale < 0.7 then iconScale = 0.7 end -- Minimum size
+    iconUIScale.Scale = iconScale
+end
+
+updateScale()
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
 
 -- ============ OPEN / CLOSE ANIMATION ============
 local isOpen = false
